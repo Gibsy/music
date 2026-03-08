@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html>
 	<head>
@@ -164,3 +165,171 @@ document.getElementById("search").addEventListener("input", e=>{
 
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html>
+	<head>
+	<meta charset="UTF-8">
+	<title>music catalog</title>
+	
+	<style>
+		body{
+		    font-family: monospace;
+		    background:#0f0f0f;
+		    color:#e0e0e0;
+		    padding:20px;
+		    display:flex;
+		}
+		#sidebar{
+		    width:180px;
+		    border-right:1px solid #333;
+		    padding-right:10px;
+		    margin-right:20px;
+		}
+		#sidebar h3{
+		    margin-top:0;
+		}
+		#sidebar .playlist{
+		    padding:4px 6px;
+		    cursor:pointer;
+		}
+		#sidebar .playlist:hover{
+		    color:#2372fc;
+		    text-decoration:underline;
+		}
+		#main{
+		    flex:1;
+		}
+		#search{
+		    background:#111;
+		    color:#e0e0e0;
+		    border:1px solid #333;
+		    padding:6px 8px;
+		    font-family:monospace;
+		    width:100%;
+		    margin-bottom:10px;
+		}
+		#search::placeholder{
+		    color:#777;
+		}
+		#count{
+		    display:block;
+		    margin-bottom:10px;
+		}
+		.song{
+		    padding:6px 10px;
+		    border-bottom:1px solid #333;
+		}
+		.song a{
+		    text-decoration:none;
+		    color:#8ab4ff;
+		}
+		.song a:hover{
+		    text-decoration:underline;
+		    color:#2372fc;
+		}
+	</style>
+	
+	</head>
+<body>
+
+<div id="sidebar">
+	<h3>Playlists</h3>
+		<div id="playlists"></div>
+</div>
+
+<div id="main">
+	<h1>My Music</h1>
+	<h4>Click on song's name to download</h4>
+	<input id="search" placeholder="search...">
+	<span id="count"></span>
+	<div id="songs"></div>
+</div>
+
+<script>
+const user = "Gibsy";
+const repo = "MusicBox";
+const root = "files";
+
+let allSongs = {};
+let currentSongs = [];
+let playlistNames = [];
+
+fetch(`https://api.github.com/repos/${user}/${repo}/contents/${root}`)
+.then(r=>r.json())
+.then(items=>{
+    let fetches = [];
+
+    items.forEach(item=>{
+        if(item.type === "dir"){
+            let f = fetch(item.url)
+            .then(r=>r.json())
+            .then(songs=>{
+                const mp3s = songs.filter(s=>s.name.endsWith(".mp3"));
+                allSongs[item.name] = mp3s;
+                if(!playlistNames.includes(item.name)) playlistNames.push(item.name);
+            });
+            fetches.push(f);
+        } else if(item.name.endsWith(".mp3")){
+            if(!allSongs["Main"]) allSongs["Main"] = [];
+            allSongs["Main"].push(item);
+            if(!playlistNames.includes("Main")) playlistNames.push("Main");
+        }
+    });
+
+    Promise.all(fetches).then(()=>{
+        updateSidebar(playlistNames.sort());
+        if(allSongs["Main"]){
+            showPlaylist("Main");
+        } else if(playlistNames.length){
+            showPlaylist(playlistNames[0]);
+        }
+    });
+});
+
+function updateSidebar(names){
+    const container = document.getElementById("playlists");
+    container.innerHTML="";
+    names.forEach(name=>{
+        const div = document.createElement("div");
+        div.className="playlist";
+        div.textContent = name;
+        div.onclick = ()=> showPlaylist(name);
+        container.appendChild(div);
+    });
+}
+
+function showPlaylist(name){
+    currentSongs = allSongs[name] ? [...allSongs[name]] : [];
+    currentSongs.sort((a,b)=>a.name.localeCompare(b.name));
+    render(currentSongs);
+}
+
+function render(list){
+    const container = document.getElementById("songs");
+    container.innerHTML="";
+
+    list.forEach(song=>{
+        const div = document.createElement("div");
+        div.className="song";
+        const link = document.createElement("a");
+        link.href = song.download_url;
+        link.textContent = song.name;
+        link.download = song.name;
+        div.appendChild(link);
+        container.appendChild(div);
+    });
+
+    document.getElementById("count").textContent = list.length+" songs";
+}
+
+document.getElementById("search").addEventListener("input", e=>{
+    const q = e.target.value.toLowerCase();
+    const filtered = currentSongs.filter(s=>s.name.toLowerCase().includes(q));
+    render(filtered);
+});
+</script>
+
+</body>
+</html>
+>>>>>>> fb698642c9771b005f0d4a4e1f3e7f3f9647d726
